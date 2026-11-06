@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visitor Management System</title>
+<style>
+:root{--nav:#102f3b;--nav2:#174354;--blue:#1598dc;--bg:#f3f6f9;--text:#263746;--muted:#718096;--line:#e4eaf0;--green:#159b68;--red:#dc4b55;--amber:#d89120}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:5px;padding:9px 13px}
+.layout{display:flex;min-height:100vh}.sidebar{width:235px;background:var(--nav);color:#d9e5eb;flex-shrink:0;display:flex;flex-direction:column}
+.brand{height:62px;display:flex;align-items:center;padding:0 20px;font-size:16px;font-weight:bold;border-bottom:1px solid #31515c}
+.site{padding:18px 20px;font-weight:bold;color:white;border-bottom:1px solid #31515c}.nav{padding:12px 9px;flex:1}.nav-label{font-size:10px;color:#8daab5;font-weight:bold;letter-spacing:1px;padding:16px 10px 7px}
+.nav button{display:block;width:100%;text-align:left;background:transparent;color:#d9e5eb;padding:11px 12px;margin:2px 0;border-radius:5px}.nav button:hover,.nav button.active{background:#138ed0;color:#fff}.nav button.sub{padding-left:31px;font-size:13px}
+.main{flex:1;min-width:0}.topbar{height:62px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 25px}
+.menu{background:transparent;font-size:20px;color:#536574;padding:5px 8px}.logout{color:#718096;background:transparent;font-size:12px}
+.content{padding:25px;max-width:1600px;margin:auto}.heading{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:22px}.heading h1{font-size:22px;margin:0 0 6px}.subheading{font-size:12px;color:var(--muted)}
+.primary{background:var(--blue);color:white}.primary:hover{background:#087db9}.secondary{background:#eaf0f5;color:#405465}.danger{background:#dc4b55;color:white}.success{background:#159b68;color:white}
+.toolbar{background:white;border:1px solid var(--line);border-radius:8px;padding:15px;display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin-bottom:16px}
+.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:11px;color:#6d7d8b;font-weight:bold}.field input,.field select{height:36px;border:1px solid #d8e0e7;border-radius:5px;padding:0 9px;background:white;color:#334}
+.toolbar .field input{min-width:130px}.toolbar .search input{min-width:210px}
+.table-wrap{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.table-head{padding:13px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);font-weight:bold}
+table{border-collapse:collapse;width:100%;min-width:850px}th,td{text-align:left;padding:12px 13px;border-bottom:1px solid #edf1f4;font-size:12px}th{background:#f7f9fb;color:#536575;font-size:11px;white-space:nowrap}tbody tr:hover{background:#f8fbfd}.person strong{display:block;font-size:12px;margin-bottom:4px}.person small{color:#82909b}.status{display:inline-block;padding:4px 8px;border-radius:20px;font-size:10px;font-weight:bold}.approved{background:#e3f6ed;color:#128453}.pending{background:#fff3d9;color:#a76b08}.rejected{background:#fde8e9;color:#bf3540}.checked{background:#e5f1ff;color:#2472b7}
+.actions{display:flex;gap:5px}.actions button{padding:6px 8px;font-size:11px}.iconbtn{background:#eaf1f7;color:#35556a}.iconbtn.edit{background:#dceeff;color:#1478b8}.iconbtn.del{background:#fde8e9;color:#c43e48}
+.table-foot{padding:12px 15px;display:flex;align-items:center;justify-content:space-between;color:#718096;font-size:12px}.pages{display:flex;gap:4px}.pages button{padding:6px 10px;background:#f0f3f6;color:#526272}.pages button.current{background:var(--blue);color:#fff}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:14px;margin-bottom:18px}.stat{background:white;border:1px solid var(--line);border-radius:8px;padding:17px}.stat small{color:var(--muted)}.stat strong{display:block;font-size:25px;margin-top:8px}
+.empty{text-align:center;padding:35px;color:#82909b}.modal-backdrop{display:none;position:fixed;inset:0;background:#0b1d2b88;z-index:10;align-items:center;justify-content:center;padding:15px}.modal-backdrop.show{display:flex}.modal{width:min(620px,100%);background:white;border-radius:10px;box-shadow:0 15px 50px #0003;max-height:94vh;overflow:auto}.modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.modal-head h2{margin:0;font-size:18px}.close{background:transparent;font-size:22px;color:#73808b;padding:0 5px}.modal-body{padding:20px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.form-grid .field input,.form-grid .field select{height:39px;width:100%}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.toast{position:fixed;right:20px;bottom:20px;background:#183b4b;color:white;padding:12px 17px;border-radius:7px;box-shadow:0 5px 20px #0002;display:none;z-index:20}.toast.show{display:block}
+.section-note{background:white;padding:25px;border:1px solid var(--line);border-radius:8px;color:#667785}
+@media(max-width:850px){.sidebar{width:190px}.content{padding:16px}.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.sidebar{width:58px}.brand{font-size:0;padding:0 15px}.brand:after{content:"V";font-size:18px}.site,.nav-label{display:none}.nav{padding:10px 5px}.nav button{font-size:0;text-align:center;padding:13px 3px}.nav button: first-letter{font-size:15px}.nav button.sub{display:none}.topbar{padding:0 12px}.content{padding:12px}.heading{align-items:flex-start;flex-direction:column}.cards{gap:8px}.stat{padding:12px}.stat strong{font-size:21px}.form-grid{grid-template-columns:1fr}.toolbar{align-items:stretch}.toolbar .field,.toolbar .field input,.toolbar .search input{width:100%}.table-foot{gap:10px;flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="brand">▣ &nbsp; Visitor Management</div>
+  <div class="site">🔵 &nbsp; GL Taft Condo</div>
+  <nav class="nav">
+    <button onclick="showSection('dashboard',this)">▦ &nbsp; Dashboard</button>
+    <button onclick="showSection('users',this)">♟ &nbsp; Users</button>
+    <button class="active" onclick="showSection('visitors',this)">▣ &nbsp; Visitors</button>
+    <button class="sub active" onclick="showSection('visitors',this)">◯ &nbsp; All Logs</button>
+    <button onclick="openModal()">✉ &nbsp; Send Invitation</button>
+    <button onclick="showSection('deliveries',this)">▤ &nbsp; Deliveries</button>
+    <button onclick="showSection('employees',this)">♙ &nbsp; Employee Logs</button>
+    <div class="nav-label">ACCOUNT SETTINGS</div>
+    <button onclick="showSection('profile',this)">⚙ &nbsp; Profile</button>
+    <div class="nav-label">LINKS</div>
+    <button onclick="showSection('qrcode',this)">▦ &nbsp; QR Code</button>
+  </nav>
+</aside>
+<main class="main">
+  <header class="topbar"><button class="menu" onclick="document.querySelector('.sidebar').classList.toggle('compact')">☰</button><button class="logout" onclick="alert('Demo system: connect this button to your login module.')">◷ &nbsp; Log Out</button></header>
+  <section class="content" id="appContent">
+    <div class="heading"><div><h1>Visitors</h1><div class="subheading">Logs / Visitor Management</div></div><button class="primary" onclick="openModal()">＋ Send Invitation</button></div>
+    <div class="cards">
+      <div class="stat"><small>Total Visitors</small><strong id="statTotal">0</strong></div>
+      <div class="stat"><small>Approved</small><strong id="statApproved">0</strong></div>
+      <div class="stat"><small>Currently Inside</small><strong id="statInside">0</strong></div>
+      <div class="stat"><small>Pending</small><strong id="statPending">0</strong></div>
+    </div>
+    <div class="toolbar">
+      <div class="field"><label>FROM</label><input type="date" id="dateFrom"></div>
+      <div class="field"><label>TO</label><input type="date" id="dateTo"></div>
+      <div class="field search"><label>SEARCH</label><input id="searchBox" type="search" placeholder="Name, email, person to visit..." oninput="renderTable()"></div>
+      <div class="field"><label>STATUS</label><select id="statusFilter" onchange="renderTable()"><option value="">All statuses</option><option>Approved</option><option>Pending</option><option>Rejected</option></select></div>
+      <button class="secondary" onclick="clearFilters()">Clear</button>
+      <button class="primary" onclick="renderTable()">Filter</button>
+      <button class="success" onclick="exportCSV()">⇩ Export</button>
+      <button class="secondary" onclick="document.getElementById('importFile').click()">⇧ Import Data</button>
+      <input type="file" id="importFile" accept=".csv,.json" hidden onchange="importData(event)">
+    </div>
+    <div class="table-wrap">
+      <div class="table-head"><span>Visitor Logs</span><span class="subheading" id="resultCount"></span></div>
+      <div style="overflow-x:auto">
+      <table><thead><tr><th>Name / Email</th><th>Visit Type</th><th>Status</th><th>Checked In</th><th>Checked Out</th><th>Person to Visit</th><th>Actions</th></tr></thead>
+      <tbody id="visitorRows"></tbody></table>
+      </div>
+      <div class="table-foot"><span id="showingText">Showing 0 records</span><div class="pages" id="pagination"></div></div>
+    </div>
+  </section>
+</main>
+</div>
+<div class="modal-backdrop" id="visitorModal">
+ <div class="modal">
+  <div class="modal-head"><h2 id="modalTitle">Add Visitor</h2><button class="close" onclick="closeModal()">×</button></div>
+  <div class="modal-body">
+   <form id="visitorForm" onsubmit="saveVisitor(event)">
+    <input type="hidden" id="visitorId">
+    <div class="form-grid">
+     <div class="field"><label>VISITOR NAME *</label><input id="visitorName" required placeholder="Full name"></div>
+     <div class="field"><label>EMAIL ADDRESS</label><input id="visitorEmail" type="email" placeholder="name@email.com"></div>
+     <div class="field"><label>VISIT TYPE *</label><select id="visitType" required><option>Personal</option><option>Short Stay</option><option>Business</option><option>Delivery</option><option>Service Provider</option></select></div>
+     <div class="field"><label>STATUS</label><select id="visitorStatus"><option>Approved</option><option>Pending</option><option>Rejected</option></select></div>
+     <div class="field"><label>PERSON TO VISIT *</label><input id="personToVisit" required placeholder="Resident / employee"></div>
+     <div class="field"><label>UNIT / LOCATION</label><input id="visitorUnit" placeholder="e.g. Unit 1201"></div>
+     <div class="field"><label>CHECKED IN</label><input id="checkedIn" type="datetime-local"></div>
+     <div class="field"><label>CHECKED OUT</label><input id="checkedOut" type="datetime-local"></div>
+     <div class="field" style="grid-column:1/-1"><label>REMARKS</label><input id="visitorRemarks" placeholder="Optional notes"></div>
+    </div>
+    <div class="modal-actions"><button type="button" class="secondary" onclick="closeModal()">Cancel</button><button class="primary" type="submit">Save Visitor</button></div>
+   </form>
+  </div>
+ </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const STORAGE_KEY='gl_taft_vms_visitors_v1';
+const seed=[
+{id:1,name:'Luis Acuña',email:'luis.acuna@gmail.com',type:'Personal',status:'Approved',in:'2026-11-06T05:35',out:'2026-11-06T17:16',person:'Jene Padua',unit:'',remarks:''},
+{id:2,name:'Princess Lei Espiritu',email:'princess.espiritu@gmail.com',type:'Short Stay',status:'Approved',in:'2026-11-06T16:45',out:'2026-11-06T18:01',person:'Chynna Galoso',unit:'',remarks:''},
+{id:3,name:'Juri Magat',email:'juri.magat@gmail.com',type:'Personal',status:'Approved',in:'2026-11-06T13:30',out:'',person:'Xyla de Guzman',unit:'',remarks:''},
+{id:4,name:'Eric Sulit',email:'eric.navarro.sulit@gmail.com',type:'Personal',status:'Approved',in:'2026-11-06T12:51',out:'',person:'Karyl Kabamalan',unit:'',remarks:''}
+];
+let visitors=loadData(), page=1, pageSize=10;
+function loadData(){try{let d=JSON.parse(localStorage.getItem(STORAGE_KEY));return Array.isArray(d)?d:seed.slice()}catch(e){return seed.slice()}}
+function persist(){localStorage.setItem(STORAGE_KEY,JSON.stringify(visitors));updateStats()}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function niceDate(v){if(!v)return 'Not Yet';let d=new Date(v);return isNaN(d)?esc(v):d.toLocaleString('en-PH',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}
+function statusClass(s){return s==='Approved'?'approved':s==='Pending'?'pending':'rejected'}
+function updateStats(){document.getElementById('statTotal').textContent=visitors.length;document.getElementById('statApproved').textContent=visitors.filter(v=>v.status==='Approved').length;document.getElementById('statInside').textContent=visitors.filter(v=>v.in&&!v.out).length;document.getElementById('statPending').textContent=visitors.filter(v=>v.status==='Pending').length}
+function filtered(){let q=document.getElementById('searchBox').value.toLowerCase(),s=document.getElementById('statusFilter').value,from=document.getElementById('dateFrom').value,to=document.getElementById('dateTo').value;return visitors.filter(v=>{let hay=[v.name,v.email,v.person,v.unit,v.type].join(' ').toLowerCase(),day=(v.in||'').slice(0,10);return (!q||hay.includes(q))&&(!s||v.status===s)&&(!from||day>=from)&&(!to||day<=to)})}
+function renderTable(){let list=filtered(),pages=Math.max(1,Math.ceil(list.length/pageSize));page=Math.min(page,pages);let start=(page-1)*pageSize,shown=list.slice(start,start+pageSize);document.getElementById('visitorRows').innerHTML=shown.length?shown.map(v=>`<tr>
+<td class="person"><strong>${esc(v.name)}</strong><small>${esc(v.email||'')}</small></td><td>${esc(v.type)}</td><td><span class="status ${statusClass(v.status)}">${esc(v.status)}</span></td>
+<td>${niceDate(v.in)}</td><td>${niceDate(v.out)}</td><td>${esc(v.person)}</td>
+<td><div class="actions"><button class="iconbtn edit" title="Edit" onclick="editVisitor(${v.id})">✎</button><button class="iconbtn" title="${v.in&&!v.out?'Check out':'Check in'}" onclick="toggleAttendance(${v.id})">${v.in&&!v.out?'↗':'↘'}</button><button class="iconbtn del" title="Delete" onclick="deleteVisitor(${v.id})">✕</button></div></td></tr>`).join(''):'<tr><td colspan="7" class="empty">No visitor records found. Click “Send Invitation” to add a visitor.</td></tr>';
+document.getElementById('resultCount').textContent=list.length+' records';document.getElementById('showingText').textContent=list.length?`Showing ${start+1} to ${Math.min(start+pageSize,list.length)} of ${list.length} entries`:'Showing 0 records';
+document.getElementById('pagination').innerHTML=Array.from({length:pages},(_,i)=>`<button class="${page===i+1?'current':''}" onclick="page=${i+1};renderTable()">${i+1}</button>`).join('');updateStats()}
+function openModal(){document.getElementById('visitorForm').reset();document.getElementById('visitorId').value='';document.getElementById('modalTitle').textContent='Add Visitor / Send Invitation';document.getElementById('visitorModal').classList.add('show')}
+function closeModal(){document.getElementById('visitorModal').classList.remove('show')}
+function editVisitor(id){let v=visitors.find(x=>x.id===id);if(!v)return;openModal();document.getElementById('modalTitle').textContent='Edit Visitor';for(let [id,val] of Object.entries({visitorId:v.id,visitorName:v.name,visitorEmail:v.email,visitType:v.type,visitorStatus:v.status,personToVisit:v.person,visitorUnit:v.unit,checkedIn:v.in,checkedOut:v.out,visitorRemarks:v.remarks}))document.getElementById(id).value=val||''}
+function saveVisitor(e){e.preventDefault();let id=Number(document.getElementById('visitorId').value),obj={id:id||Date.now(),name:document.getElementById('visitorName').value.trim(),email:document.getElementById('visitorEmail').value.trim(),type:document.getElementById('visitType').value,status:document.getElementById('visitorStatus').value,person:document.getElementById('personToVisit').value.trim(),unit:document.getElementById('visitorUnit').value.trim(),in:document.getElementById('checkedIn').value,out:document.getElementById('checkedOut').value,remarks:document.getElementById('visitorRemarks').value.trim()};if(id){visitors=visitors.map(v=>v.id===id?obj:v);notify('Visitor record updated')}else{visitors.unshift(obj);notify('Visitor added successfully')}persist();page=1;renderTable();closeModal()}
+function deleteVisitor(id){let v=visitors.find(x=>x.id===id);if(v&&confirm('Delete visitor record for '+v.name+'? This cannot be undone.')){visitors=visitors.filter(x=>x.id!==id);persist();renderTable();notify('Record deleted')}}
+function toggleAttendance(id){let v=visitors.find(x=>x.id===id);if(!v)return;if(v.status!=='Approved'){notify('Only approved visitors can be checked in or out');return}let now=new Date(),local=new Date(now-now.getTimezoneOffset()*60000).toISOString().slice(0,16);if(v.in&&!v.out){v.out=local;notify('Visitor checked out')}else{v.in=local;v.out='';notify('Visitor checked in')}persist();renderTable()}
+function clearFilters(){['dateFrom','dateTo','searchBox','statusFilter'].forEach(id=>document.getElementById(id).value='');page=1;renderTable()}
+function csvCell(x){return '"'+String(x??'').replace(/"/g,'""')+'"'}
+function exportCSV(){let headers=['ID','Name','Email','Visit Type','Status','Checked In','Checked Out','Person to Visit','Unit','Remarks'];let rows=filtered().map(v=>[v.id,v.name,v.email,v.type,v.status,v.in,v.out,v.person,v.unit,v.remarks]);let csv='\uFEFF'+[headers,...rows].map(r=>r.map(csvCell).join(',')).join('\r\n');downloadFile(csv,'visitors_export.csv','text/csv;charset=utf-8;');notify('Visitor data exported')}
+function downloadFile(data,name,type){let blob=new Blob([data],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
+function importData(e){let file=e.target.files[0];if(!file)return;let reader=new FileReader();reader.onload=()=>{try{let data;if(file.name.toLowerCase().endsWith('.json'))data=JSON.parse(reader.result);else data=parseCSV(reader.result);if(!Array.isArray(data))throw Error('The file must contain an array of records.');let incoming=data.map((r,i)=>({id:Number(r.id||r.ID)||Date.now()+i,name:r.name||r.Name||'',email:r.email||r.Email||'',type:r.type||r['Visit Type']||'Personal',status:r.status||r.Status||'Pending',in:r.in||r['Checked In']||'',out:r.out||r['Checked Out']||'',person:r.person||r['Person to Visit']||'',unit:r.unit||r.Unit||'',remarks:r.remarks||r.Remarks||''})).filter(v=>v.name);if(!incoming.length)throw Error('No valid visitor rows found.');if(confirm(`Import ${incoming.length} visitor records? Choose OK to add them to current records.`)){visitors=[...incoming,...visitors];persist();renderTable();notify(`${incoming.length} records imported`)}}catch(err){alert('Import failed: '+err.message)}e.target.value=''};reader.readAsText(file)}
+function parseCSV(text){let lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim());if(lines.length<2)return[];function parseLine(line){let out=[],cur='',q=false;for(let i=0;i<line.length;i++){let c=line[i];if(c==='"'&&line[i+1]==='"'&&q){cur+='"';i++}else if(c==='"')q=!q;else if(c===','&&!q){out.push(cur);cur=''}else cur+=c}out.push(cur);return out}let h=parseLine(lines.shift()).map(x=>x.trim());return lines.map(line=>{let a=parseLine(line),o={};h.forEach((k,i)=>o[k]=a[i]||'');return o})}
+function notify(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
+function showSection(section,btn){if(section==='visitors'){document.getElementById('appContent').style.display='';renderTable();return}let names={dashboard:'Dashboard',users:'Users',deliveries:'Deliveries',employees:'Employee Logs',profile:'Profile',qrcode:'QR Code'};document.getElementById('appContent').innerHTML=`<div class="heading"><div><h1>${names[section]||section}</h1><div class="subheading">Visitor Management System</div></div></div><div class="section-note"><strong>${names[section]||section}</strong><p>This screen is a front-end placeholder. The Visitors / All Logs module is fully functional in this standalone demo. Connect this section to your database and user permissions when deploying.</p><button class="primary" onclick="location.reload()">Return to Visitor Logs</button></div>`}
+document.getElementById('dateFrom').addEventListener('change',()=>{page=1;renderTable()});document.getElementById('dateTo').addEventListener('change',()=>{page=1;renderTable()});
+document.getElementById('visitorModal').addEventListener('click',e=>{if(e.target.id==='visitorModal')closeModal()});
+renderTable();
+</script>
+</body>
+</html>
