@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mustang Employee Record</title>
+<!-- SheetJS creates real .xlsx Excel workbooks in the browser. -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root { --aqua:#08d6d2; --aqua-dark:#00aaa8; --white:#fff; --ink:#202020; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:24px 14px 40px; background:var(--aqua); color:var(--ink); font-family:Arial,Helvetica,sans-serif; }
+  .app { width:min(100%,1050px); margin:0 auto; }
+  h1 { margin:0 0 24px; padding:12px 8px; text-align:center; font-size:clamp(23px,4vw,42px); line-height:1.15; background:#f7f7f7; border:3px solid #d5d5d5; }
+  .form-grid { display:grid; grid-template-columns: minmax(150px, 240px) minmax(0,1fr); gap:12px 18px; }
+  label { display:flex; align-items:center; padding:8px 10px; background:#f7f7f7; border:2px solid #ddd; font-size:clamp(15px,2.2vw,22px); font-weight:500; }
+  input, select { width:100%; min-width:0; height:48px; padding:8px 12px; border:3px solid #aaa; border-radius:2px; background:white; font-size:18px; }
+  input:focus, select:focus { outline:3px solid rgba(0,90,90,.22); border-color:#168d8b; }
+  .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; align-items:center; }
+  button, .file-label { min-height:46px; padding:9px 18px; border:2px solid #999; border-radius:3px; background:#f4f4f4; color:#111; font-size:18px; cursor:pointer; }
+  button:hover, .file-label:hover { background:#e3eeee; }
+  button:active { transform:translateY(1px); }
+  .search-label { font-size:17px; font-weight:600; }
+  #searchInput { flex:1 1 180px; }
+  .primary { background:#e8ffff; border-color:#168d8b; font-weight:700; }
+  .danger { border-color:#b77; }
+  .file-label input { display:none; }
+  .status { min-height:24px; margin:12px 0 0; font-size:14px; font-weight:600; }
+  .table-wrap { margin-top:22px; overflow-x:auto; background:white; border:2px solid #999; }
+  table { width:100%; border-collapse:collapse; min-width:850px; background:white; }
+  th, td { padding:10px 9px; border:1px solid #ccc; text-align:left; font-size:14px; }
+  th { position:sticky; top:0; background:#e9ffff; }
+  tbody tr { cursor:pointer; }
+  tbody tr:hover { background:#f0ffff; }
+  tbody tr.selected { background:#c8f5f3; }
+  .table-note { margin:8px 0 0; font-size:13px; }
+  @media(max-width:600px) {
+    body { padding:14px 9px 28px; }
+    .form-grid { grid-template-columns:1fr; gap:5px; }
+    label { padding:6px 9px; }
+    input,select { height:44px; margin-bottom:7px; }
+    button,.file-label { flex:1 1 42%; font-size:16px; }
+    #searchInput { flex-basis:100%; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <h1>MUSTANG EMPLOYEE RECORD</h1>
+  <form id="employeeForm" autocomplete="off">
+    <div class="form-grid">
+      <label for="idNumber">ID NUMBER</label><input id="idNumber" name="idNumber" required>
+      <label for="lastName">LAST NAME</label><input id="lastName" name="lastName" required>
+      <label for="firstName">FIRST NAME</label><input id="firstName" name="firstName" required>
+      <label for="middleName">MIDDLE NAME</label><input id="middleName" name="middleName">
+      <label for="designation">DESIGNATION</label><input id="designation" name="designation">
+      <label for="cellphone">CELLPHONE #</label><input id="cellphone" name="cellphone" type="tel" inputmode="tel">
+      <label for="gender">GENDER</label>
+      <select id="gender" name="gender"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option></select>
+      <label for="birthDate">BIRTH DATE</label><input id="birthDate" name="birthDate" type="date">
+      <label for="education">EDUCATION</label><input id="education" name="education">
+      <label for="licenseNo">LICENSE NO.</label><input id="licenseNo" name="licenseNo">
+      <label for="expiryDate">EXPIRY DATE</label><input id="expiryDate" name="expiryDate" type="date">
+      <label for="address">ADDRESS</label><input id="address" name="address">
+    </div>
+    <div class="actions">
+      <button type="button" id="addBtn" class="primary">Add</button>
+      <button type="button" id="editBtn">Edit</button>
+      <button type="button" id="deleteBtn" class="danger">Delete</button>
+      <label class="search-label" for="searchInput">Search Last Name</label>
+      <input id="searchInput" placeholder="Enter last name..." aria-label="Search by last name">
+      <button type="button" id="clearBtn">Clear Form</button>
+    </div>
+    <div class="actions">
+      <label class="file-label" for="importFile">Import Data<input id="importFile" type="file" accept=".xlsx,.xls,.csv"></label>
+      <button type="button" id="exportBtn" class="primary">Export to Excel (.xlsx)</button>
+    </div>
+  </form>
+  <p class="status" id="status" role="status" aria-live="polite">Ready. Add an employee record to begin.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>ID Number</th><th>Last Name</th><th>First Name</th><th>Middle Name</th><th>Designation</th><th>Cellphone #</th><th>Gender</th><th>Birth Date</th><th>Education</th><th>License No.</th><th>Expiry Date</th><th>Address</th>
+      </tr></thead>
+      <tbody id="employeeRows"></tbody>
+    </table>
+  </div>
+  <p class="table-note">Tip: Select a row to load its details into the form. Your records are saved in this browser on this device.</p>
+</main>
+<script>
+(() => {
+  'use strict';
+  const fields = ['idNumber','lastName','firstName','middleName','designation','cellphone','gender','birthDate','education','licenseNo','expiryDate','address'];
+  const headings = ['ID Number','Last Name','First Name','Middle Name','Designation','Cellphone #','Gender','Birth Date','Education','License No.','Expiry Date','Address'];
+  const form = document.getElementById('employeeForm');
+  const tbody = document.getElementById('employeeRows');
+  const status = document.getElementById('status');
+  const STORAGE_KEY = 'mustangEmployeeRecords_v1';
+  let employees = loadRecords();
+  let selectedId = null;
+
+  function loadRecords() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      return Array.isArray(saved) ? saved : [];
+    } catch (e) { return []; }
+  }
+  function saveRecords() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(employees)); }
+    catch (e) { message('Could not save to browser storage. Export a backup of your records.'); }
+  }
+  function message(text) { status.textContent = text; }
+  function getFormRecord() {
+    const record = {};
+    fields.forEach(id => record[id] = document.getElementById(id).value.trim());
+    return record;
+  }
+  function fillForm(record) {
+    fields.forEach(id => document.getElementById(id).value = record[id] || '');
+    selectedId = record.idNumber;
+  }
+  function clearForm() {
+    form.reset(); selectedId = null;
+    [...tbody.querySelectorAll('tr')].forEach(row => row.classList.remove('selected'));
+  }
+  function renderRows(list = employees) {
+    tbody.replaceChildren();
+    list.forEach(record => {
+      const tr = document.createElement('tr');
+      if (record.idNumber === selectedId) tr.classList.add('selected');
+      fields.forEach(id => {
+        const td = document.createElement('td');
+        td.textContent = record[id] || '';
+        tr.appendChild(td);
+      });
+      tr.addEventListener('click', () => {
+        fillForm(record); renderRows(filteredEmployees());
+        message('Selected employee: ' + (record.firstName || '') + ' ' + (record.lastName || ''));
+      });
+      tbody.appendChild(tr);
+    });
+  }
+  function filteredEmployees() {
+    const query = document.getElementById('searchInput').value.trim().toLowerCase();
+    return query ? employees.filter(e => (e.lastName || '').toLowerCase().includes(query)) : employees;
+  }
+  // Convert imported Excel dates and common text dates to HTML date-input format (YYYY-MM-DD).
+  function normalizeImportedDate(value) {
+    if (value === null || value === undefined || value === '') return '';
+
+    // SheetJS may return a JavaScript Date when cellDates is enabled.
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      const y = value.getFullYear();
+      const m = String(value.getMonth() + 1).padStart(2, '0');
+      const d = String(value.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    // Excel stores many dates as serial numbers (days since 1899-12-30).
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      const parsed = XLSX.SSF.parse_date_code(value);
+      if (parsed && parsed.y && parsed.m && parsed.d) {
+        return `${parsed.y}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`;
+      }
+      return '';
+    }
+
+    const text = String(value).trim();
+    if (!text) return '';
+
+    // Already in ISO format.
+    let match = text.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+    if (match) {
+      const [, y, m, d] = match;
+      return validISODate(+y, +m, +d) ? `${y}-${String(+m).padStart(2, '0')}-${String(+d).padStart(2, '0')}` : '';
+    }
+
+    // Slash/dash dates: use Philippine day-first convention when ambiguous.
+    match = text.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2,4})$/);
+    if (match) {
+      let [, first, second, year] = match;
+      let a = Number(first), b = Number(second), y = Number(year);
+      if (year.length === 2) y += y >= 50 ? 1900 : 2000;
+      let day, month;
+      if (a > 12) { day = a; month = b; }
+      else if (b > 12) { month = a; day = b; }
+      else { day = a; month = b; } // DD/MM/YYYY when both are 12 or below
+      return validISODate(y, month, day)
+        ? `${y}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        : '';
+    }
+
+    // Handles readable dates such as "January 5, 1990".
+    const parsedDate = new Date(text);
+    if (!Number.isNaN(parsedDate.getTime())) {
+      const y = parsedDate.getFullYear();
+      const m = parsedDate.getMonth() + 1;
+      const d = parsedDate.getDate();
+      return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+    return '';
+  }
+
+  function validISODate(year, month, day) {
+    const date = new Date(year, month - 1, day);
+    return month >= 1 && month <= 12 && day >= 1 &&
+      date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+  }
+
+  function validRecord(record) {
+    if (!record.idNumber || !record.lastName || !record.firstName) {
+      message('Please enter at least ID Number, Last Name, and First Name.'); return false;
+    }
+    return true;
+  }
+
+  document.getElementById('addBtn').addEventListener('click', () => {
+    const record = getFormRecord();
+    if (!validRecord(record)) return;
+    if (employees.some(e => e.idNumber.toLowerCase() === record.idNumber.toLowerCase())) {
+      message('That ID Number already exists. Use Edit to update the employee.'); return;
+    }
+    employees.push(record); saveRecords(); clearForm(); renderRows(filteredEmployees());
+    message('Employee record added successfully.');
+  });
+  document.getElementById('editBtn').addEventListener('click', () => {
+    const record = getFormRecord();
+    if (!validRecord(record)) return;
+    if (!selectedId) { message('Select an employee row first before editing.'); return; }
+    const index = employees.findIndex(e => e.idNumber === selectedId);
+    if (index < 0) { message('Selected employee was not found.'); return; }
+    const duplicate = employees.some((e,i) => i !== index && e.idNumber.toLowerCase() === record.idNumber.toLowerCase());
+    if (duplicate) { message('Another employee already uses that ID Number.'); return; }
+    employees[index] = record; saveRecords(); selectedId = record.idNumber; renderRows(filteredEmployees());
+    message('Employee record updated successfully.');
+  });
+  document.getElementById('deleteBtn').addEventListener('click', () => {
+    if (!selectedId) { message('Select an employee row first before deleting.'); return; }
+    const record = employees.find(e => e.idNumber === selectedId);
+    if (!record || !confirm(`Delete the record for ${record.firstName} ${record.lastName} (ID: ${selectedId})?`)) return;
+    employees = employees.filter(e => e.idNumber !== selectedId); saveRecords(); clearForm(); renderRows(filteredEmployees());
+    message('Employee record deleted.');
+  });
+  document.getElementById('clearBtn').addEventListener('click', () => { clearForm(); message('Form cleared.'); });
+  document.getElementById('searchInput').addEventListener('input', () => renderRows(filteredEmployees()));
+
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    if (!employees.length) { message('There are no employee records to export.'); return; }
+    if (typeof XLSX === 'undefined') { message('Excel export library did not load. Check your internet connection and reload this page.'); return; }
+    const rows = employees.map(e => {
+      const row = {};
+      fields.forEach((id, i) => row[headings[i]] = e[id] || '');
+      return row;
+    });
+    const worksheet = XLSX.utils.json_to_sheet(rows, { header: headings });
+    worksheet['!cols'] = [14,18,18,18,20,18,12,14,22,18,14,35].map(wch => ({ wch }));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Employee Records');
+    XLSX.writeFile(workbook, 'Mustang_Employee_Records.xlsx');
+    message('Excel file exported successfully.');
+  });
+
+  document.getElementById('importFile').addEventListener('change', async event => {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (typeof XLSX === 'undefined') { message('Import library did not load. Check your internet connection and reload.'); event.target.value=''; return; }
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type:'array', cellDates:true });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const imported = XLSX.utils.sheet_to_json(sheet, { defval:'' });
+      // Normalize headers so imports accept variations such as "Birth Date", "BirthDate", "birth_date", etc.
+      const normalizeHeader = value => String(value).trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      const keyMap = new Map();
+      headings.forEach((heading, i) => keyMap.set(normalizeHeader(heading), fields[i]));
+      fields.forEach(field => keyMap.set(normalizeHeader(field), field));
+      // Common alternative column names used in employee spreadsheets.
+      keyMap.set('dateofbirth', 'birthDate');
+      keyMap.set('birthday', 'birthDate');
+      keyMap.set('licenceexpiry', 'expiryDate');
+      keyMap.set('expirationdate', 'expiryDate');
+      keyMap.set('expiry', 'expiryDate');
+      let added = 0, updated = 0, invalidDates = 0;
+      imported.forEach(source => {
+        const record = Object.fromEntries(fields.map(f => [f,'']));
+        Object.entries(source).forEach(([key,value]) => {
+          const field = keyMap.get(normalizeHeader(key));
+          if (field) {
+            if (field === 'birthDate' || field === 'expiryDate') {
+              record[field] = normalizeImportedDate(value);
+              if (value !== '' && value !== null && value !== undefined && !record[field]) invalidDates++;
+            } else {
+              record[field] = String(value ?? '').trim();
+            }
+          }
+        });
+        if (!record.idNumber) return;
+        const index = employees.findIndex(e => e.idNumber.toLowerCase() === record.idNumber.toLowerCase());
+        if (index >= 0) { employees[index] = record; updated++; }
+        else { employees.push(record); added++; }
+      });
+      saveRecords(); renderRows(filteredEmployees());
+      message(`Import complete: ${added} added, ${updated} updated. Birth Date and Expiry Date converted to YYYY-MM-DD. ${invalidDates} unrecognized date value(s) left blank. Rows without an ID Number were skipped.`);
+    } catch (err) { message('Could not read this file. Please use a valid .xlsx, .xls, or .csv file.'); }
+    event.target.value = '';
+  });
+
+  renderRows();
+  message(employees.length ? `${employees.length} employee record(s) loaded from this browser.` : 'Ready. Add an employee record to begin.');
+})();
+</script>
+</body>
+</html>
